@@ -6,7 +6,7 @@ internalizing, and evolving open-source projects into your AI agent ecosystem.
 """
 
 __version__ = "2.0.0"
-__author__ = "SATPROTOCOL"
+__author__ = "justmicos"
 __license__ = "MIT"
 
 from .lib.models import (

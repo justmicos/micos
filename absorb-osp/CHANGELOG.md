@@ -39,5 +39,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Basic verify/evaluate/judge/internalize/load/verify/iterate flow
 - Claude Code integration via `.claude/skills/`
 
-[2.0.0]: https://github.com/SATPROTOCOL/micos/compare/v1.0.0...v2.0.0
-[1.0.0]: https://github.com/SATPROTOCOL/micos/releases/tag/v1.0.0
+[2.0.0]: https://github.com/justmicos/micos/compare/v1.0.0...v2.0.0
+[1.0.0]: https://github.com/justmicos/micos/releases/tag/v1.0.0

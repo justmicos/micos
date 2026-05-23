@@ -20,12 +20,12 @@
 <b>mic</b>roscopic <b>o</b>pen <b>s</b>ource — 让每个 AI Agent 都拥有吸收开源项目精华的能力。
 
 <p align="center">
-  <img src="https://img.shields.io/github/license/SATPROTOCOL/micos?style=flat-square&label=License&color=blue" alt="MIT">
+  <img src="https://img.shields.io/github/license/justmicos/micos?style=flat-square&label=License&color=blue" alt="MIT">
   <img src="https://img.shields.io/badge/version-0.1.0--alpha-blueviolet?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/Claude%20Code-Compatible-brightgreen?style=flat-square&logo=claude" alt="Claude Code">
   <img src="https://img.shields.io/badge/Hermes%20Agent-Compatible-brightgreen?style=flat-square" alt="Hermes">
   <img src="https://img.shields.io/badge/Any%20LLM-Ready-orange?style=flat-square" alt="Any LLM">
-  <img src="https://img.shields.io/github/stars/SATPROTOCOL/micos?style=flat-square&logo=github" alt="Stars">
+  <img src="https://img.shields.io/github/stars/justmicos/micos?style=flat-square&logo=github" alt="Stars">
 </p>
 
 ---
@@ -251,7 +251,7 @@ Agent: "Loading absorbed project 'awesome-project' from INDEX.md..."
 
 ```bash
 # Clone the monorepo
-git clone https://github.com/SATPROTOCOL/micos.git
+git clone https://github.com/justmicos/micos.git
 cd micos/absorb-osp
 
 # Install for Claude Code
@@ -335,10 +335,10 @@ micos/
 
 ## 👨‍💻 Developer
 
-**micos** is crafted and maintained by **[SATPROTOCOL](https://github.com/SATPROTOCOL)**.
+**micos** is crafted and maintained by **[SATPROTOCOL](https://github.com/justmicos)**.
 
 <p align="center">
-  <a href="https://github.com/SATPROTOCOL">
+  <a href="https://github.com/justmicos">
     <img src="https://img.shields.io/badge/GitHub-SATPROTOCOL-181717?style=for-the-badge&logo=github" alt="SATPROTOCOL">
   </a>
 </p>
@@ -432,7 +432,7 @@ micos/
 ## ⚡ 快速开始
 
 ```bash
-git clone https://github.com/SATPROTOCOL/micos.git
+git clone https://github.com/justmicos/micos.git
 cd micos/absorb-osp
 
 # Claude Code 用户
@@ -452,10 +452,10 @@ cp -r hermes/* ~/.hermes/config/
 
 ## 👨‍💻 开发者
 
-**micos** 由 **[SATPROTOCOL](https://github.com/SATPROTOCOL)** 独立开发维护。
+**micos** 由 **[SATPROTOCOL](https://github.com/justmicos)** 独立开发维护。
 
 <p align="center">
-  <a href="https://github.com/SATPROTOCOL">
+  <a href="https://github.com/justmicos">
     <img src="https://img.shields.io/badge/GitHub-SATPROTOCOL-181717?style=for-the-badge&logo=github" alt="SATPROTOCOL">
   </a>
 </p>
@@ -495,7 +495,7 @@ A ferramenta principal. Uma metodologia completa e security-first para absorver 
 ## ⚡ Início Rápido
 
 ```bash
-git clone https://github.com/SATPROTOCOL/micos.git
+git clone https://github.com/justmicos/micos.git
 cd micos/absorb-osp
 
 # Para Claude Code
@@ -509,10 +509,10 @@ cp -r hermes/* ~/.hermes/config/
 
 ## 👨‍💻 Desenvolvedor
 
-**micos** é criado e mantido por **[SATPROTOCOL](https://github.com/SATPROTOCOL)**.
+**micos** é criado e mantido por **[SATPROTOCOL](https://github.com/justmicos)**.
 
 <p align="center">
-  <a href="https://github.com/SATPROTOCOL">
+  <a href="https://github.com/justmicos">
     <img src="https://img.shields.io/badge/GitHub-SATPROTOCOL-181717?style=for-the-badge&logo=github" alt="SATPROTOCOL">
   </a>
 </p>
@@ -552,7 +552,7 @@ cp -r hermes/* ~/.hermes/config/
 ## ⚡ بداية سريعة
 
 ```bash
-git clone https://github.com/SATPROTOCOL/micos.git
+git clone https://github.com/justmicos/micos.git
 cd micos/absorb-osp
 
 # لكلود كود
@@ -566,10 +566,10 @@ cp -r hermes/* ~/.hermes/config/
 
 ## 👨‍💻 المطور
 
-**micos** من إنشاء وصيانة **[SATPROTOCOL](https://github.com/SATPROTOCOL)**.
+**micos** من إنشاء وصيانة **[SATPROTOCOL](https://github.com/justmicos)**.
 
 <p align="center">
-  <a href="https://github.com/SATPROTOCOL">
+  <a href="https://github.com/justmicos">
     <img src="https://img.shields.io/badge/GitHub-SATPROTOCOL-181717?style=for-the-badge&logo=github" alt="SATPROTOCOL">
   </a>
 </p>
@@ -580,5 +580,5 @@ cp -r hermes/* ~/.hermes/config/
   <strong>micos</strong> — 微观开源，汇聚智慧.<br>
   <em>Micro open source, macro intelligence.</em><br>
   <br>
-  <sub>Built with ❤️ by <a href="https://github.com/SATPROTOCOL">SATPROTOCOL</a></sub>
+  <sub>Built with ❤️ by <a href="https://github.com/justmicos">SATPROTOCOL</a></sub>
 </p>

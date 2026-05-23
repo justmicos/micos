@@ -23,7 +23,7 @@ param(
     [switch]$Hermes
 )
 
-$REPO_URL = "https://github.com/SATPROTOCOL/micos"
+$REPO_URL = "https://github.com/justmicos/micos"
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
 $TIMESTAMP = Get-Date -Format "yyyyMMdd-HHmmss"
 

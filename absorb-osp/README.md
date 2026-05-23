@@ -6,7 +6,7 @@
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Compatible-brightgreen)](https://claude.ai/code)
 [![Hermes Agent](https://img.shields.io/badge/Hermes%20Agent-Compatible-brightgreen)](https://github.com/HermesAgent)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![Part of micos](https://img.shields.io/badge/Part%20of-micos-blue)](https://github.com/SATPROTOCOL/micos)
+[![Part of micos](https://img.shields.io/badge/Part%20of-micos-blue)](https://github.com/justmicos/micos)
 
 ---
 
@@ -87,10 +87,10 @@ Trigger(0) → Triage(1) → Verify(2) → Evaluate(3) → Judge(4) → Classify
 
 ### Installation
 
-> **Note**: absorb-osp is part of the [micos](https://github.com/SATPROTOCOL/micos) monorepo.
+> **Note**: absorb-osp is part of the [micos](https://github.com/justmicos/micos) monorepo.
 
 ```bash
-git clone https://github.com/SATPROTOCOL/micos.git
+git clone https://github.com/justmicos/micos.git
 cd micos/absorb-osp
 
 # For Claude Code
@@ -103,7 +103,7 @@ cp -r hermes/* ~/.hermes/config/
 #### Per-project install (git submodule)
 
 ```bash
-git submodule add https://github.com/SATPROTOCOL/micos.git .claude/micos
+git submodule add https://github.com/justmicos/micos.git .claude/micos
 ln -s .claude/micos/absorb-osp/claude/* ~/.claude/
 ```
 
@@ -308,13 +308,13 @@ AI agents today can clone and run almost any open-source project, but they lack 
 
 ## 👨‍💻 Developer
 
-**absorb-osp** is part of the **micos** ecosystem, crafted by **[SATPROTOCOL](https://github.com/SATPROTOCOL)**.
+**absorb-osp** is part of the **micos** ecosystem, crafted by **[SATPROTOCOL](https://github.com/justmicos)**.
 
 <p align="center">
-  <a href="https://github.com/SATPROTOCOL">
+  <a href="https://github.com/justmicos">
     <img src="https://img.shields.io/badge/GitHub-SATPROTOCOL-181717?style=for-the-badge&logo=github" alt="SATPROTOCOL">
   </a>
-  <a href="https://github.com/SATPROTOCOL/micos">
+  <a href="https://github.com/justmicos/micos">
     <img src="https://img.shields.io/badge/monos-SATPROTOCOL%2Fmicos-blue?style=for-the-badge&logo=github" alt="micos">
   </a>
 </p>

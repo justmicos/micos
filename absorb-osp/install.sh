@@ -12,7 +12,7 @@ set -euo pipefail
 # ── Configuration ──────────────────────────────────────────────────
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_URL="https://github.com/SATPROTOCOL/micos"
+REPO_URL="https://github.com/justmicos/micos"
 
 # Detect target directory
 TARGET_DIR="${CLAUDE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME}/.claude}"

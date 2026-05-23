@@ -84,7 +84,7 @@
 
 ## Placeholder Verification
 
-All placeholders have been updated to reference `SATPROTOCOL/micos`. Users forking should update accordingly.
+All placeholders have been updated to reference `justmicos/micos`. Users forking should update accordingly.
 
 These are intentional placeholders, not a security concern.
 

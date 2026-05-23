@@ -22,7 +22,7 @@ Thank you for considering contributing to this project!
 ### Development Setup
 
 ```bash
-git clone https://github.com/SATPROTOCOL/micos.git
+git clone https://github.com/justmicos/micos.git
 cd absorb-osp
 make dev-setup
 ```

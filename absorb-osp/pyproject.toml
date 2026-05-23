@@ -9,7 +9,7 @@ description = "Systematic 12-step closed-loop flywheel for evaluating, absorbing
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "SATPROTOCOL"},
+    {name = "justmicos"},
 ]
 keywords = [
     "open-source", "absorption", "ai-agent", "workflow",
@@ -35,9 +35,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/SATPROTOCOL/micos"
-Repository = "https://github.com/SATPROTOCOL/micos"
-Documentation = "https://github.com/SATPROTOCOL/micos/tree/main/absorb-osp"
+Homepage = "https://github.com/justmicos/micos"
+Repository = "https://github.com/justmicos/micos"
+Documentation = "https://github.com/justmicos/micos/tree/main/absorb-osp"
 
 [project.optional-dependencies]
 mcp = ["mcp>=1.0.0"]
