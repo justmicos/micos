@@ -1,0 +1,54 @@
+# ──────────────────────────────────────────────────────────
+#  absorb-osp — Release Workflow
+#  Automatically creates a GitHub release when a version tag
+#  is pushed. Includes privacy verification before release.
+# ──────────────────────────────────────────────────────────
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  privacy-check:
+    name: 🔒 Pre-Release Privacy Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run privacy leak scanner
+        run: python3 scripts/privacy-check.py absorb-osp/
+      - name: Run full file check
+        run: |
+          python3 scripts/validate.py absorb-osp/templates/
+          python3 scripts/validate.py absorb-osp/shared/
+
+  release:
+    name: 📦 Create Release
+    needs: [privacy-check]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Create release archive
+        run: |
+          mkdir -p dist
+          VERSION="${{ steps.version.outputs.version }}"
+          cd absorb-osp
+          tar czf ../dist/absorb-osp-${VERSION}.tar.gz \
+            README.md LICENSE CHANGELOG.md CONTRIBUTING.md \
+            claude/ hermes/ templates/ shared/ examples/ \
+            install.sh install.ps1 .gitignore
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "absorb-osp ${{ steps.version.outputs.version }}"
+          body_path: absorb-osp/CHANGELOG.md
+          files: dist/*
+          prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') }}

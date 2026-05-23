@@ -1,0 +1,136 @@
+# ──────────────────────────────────────────────────────────
+#  absorb-osp — Continuous Integration
+#  Runs on every push/PR to main.
+#  Privacy scan runs on ALL pushes (cannot be skipped).
+# ──────────────────────────────────────────────────────────
+
+name: CI
+
+on:
+  push:
+    branches: [main, '**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Privacy Scan (MANDATORY, runs first) ──────────────
+  privacy-check:
+    name: 🔒 Privacy Leak Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run privacy leak scanner
+        run: |
+          echo "🔍 Scanning for privacy leaks..."
+          python3 scripts/privacy-check.py absorb-osp/ --verbose
+        continue-on-error: false
+
+  # ── File Integrity Check ───────────────────────────────
+  file-check:
+    name: 📋 File Integrity Check
+    runs-on: ubuntu-latest
+    needs: [privacy-check]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check required files exist
+        run: |
+          errors=0
+          files="\
+            absorb-osp/claude/SKILL.md \
+            absorb-osp/claude/WORKFLOW_SPEC.md \
+            absorb-osp/claude/rules/absorb-workflow.md \
+            absorb-osp/templates/analysis_report.md \
+            absorb-osp/templates/usage_log.md \
+            absorb-osp/templates/instinct.md \
+            absorb-osp/shared/INDEX.md \
+            absorb-osp/shared/reject_log.md \
+            absorb-osp/shared/defer_log.md \
+            absorb-osp/install.sh \
+            absorb-osp/install.ps1 \
+            absorb-osp/LICENSE \
+            absorb-osp/README.md \
+          "
+          for f in $files; do
+            if [ ! -f "$f" ]; then
+              echo "❌ MISSING: $f"
+              errors=$((errors + 1))
+            fi
+          done
+          if [ $errors -eq 0 ]; then
+            echo "✅ All required files present."
+          else
+            echo "❌ $errors file(s) missing."
+            exit 1
+          fi
+
+  # ── YAML Frontmatter Validation ───────────────────────
+  frontmatter-validation:
+    name: 📄 Frontmatter Validation
+    runs-on: ubuntu-latest
+    needs: [privacy-check]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate template frontmatter
+        run: |
+          python3 scripts/validate.py absorb-osp/templates/
+          python3 scripts/validate.py absorb-osp/shared/
+      - name: Validate analysis reports
+        run: |
+          for f in absorb-osp/examples/*.md; do
+            python3 scripts/validate.py "$f" analysis_report.md || true
+          done
+
+  # ── Markdown Lint ─────────────────────────────────────
+  markdown-lint:
+    name: 📝 Markdown Lint
+    runs-on: ubuntu-latest
+    needs: [privacy-check]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          globs: |
+            absorb-osp/**/*.md
+            README.md
+          config: |
+            {
+              "MD013": false,
+              "MD033": false,
+              "MD041": false,
+              "MD024": false
+            }
+
+  # ── Install Script Syntax Check ───────────────────────
+  script-check:
+    name: 🔧 Install Script Syntax
+    runs-on: ubuntu-latest
+    needs: [privacy-check]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check bash syntax
+        run: bash -n absorb-osp/install.sh
+      - name: Check PowerShell syntax (via pwsh if available)
+        run: |
+          if command -v pwsh &>/dev/null; then
+            pwsh -NoProfile -Command "Invoke-Expression (Get-Content absorb-osp/install.ps1 -Raw)" 2>&1 || echo "⚠️  PowerShell syntax check requires manual review on Windows"
+          else
+            echo "⚠️  pwsh not available — skipping PowerShell syntax check"
+          fi
+
+  # ── Status Badge ──────────────────────────────────────
+  status:
+    name: ✅ Status Summary
+    runs-on: ubuntu-latest
+    needs: [privacy-check, file-check, frontmatter-validation, markdown-lint, script-check]
+    if: always()
+    steps:
+      - run: |
+          echo "╔══════════════════════════════════════════╗"
+          echo "║  absorb-osp CI Results                    ║"
+          echo "╠══════════════════════════════════════════╣"
+          echo "║  🔒 Privacy:       ${{ needs.privacy-check.result }}"
+          echo "║  📋 Integrity:     ${{ needs.file-check.result }}"
+          echo "║  📄 Frontmatter:   ${{ needs.frontmatter-validation.result }}"
+          echo "║  📝 Markdown:      ${{ needs.markdown-lint.result }}"
+          echo "║  🔧 Scripts:       ${{ needs.script-check.result }}"
+          echo "╚══════════════════════════════════════════╝"

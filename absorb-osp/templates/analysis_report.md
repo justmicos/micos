@@ -1,12 +1,12 @@
 ---
 absorb_date: YYYY-MM-DD
 github_url: https://github.com/owner/repo
-license: MIT/Apache-2.0/GPL-3.0/Other
-stars: N
-depth: L1/L2/L3/L4/L5
-status: online/built/installed/rejected/deferred
-judge_score: X.X
-classify_decision: MERGE/SUPERSEDE/ENHANCE/STANDALONE
+license: MIT
+stars: 1500
+depth: L3
+status: built
+judge_score: 3.5
+classify_decision: STANDALONE
 integration_targets:
   - agent-skills
   - mcp

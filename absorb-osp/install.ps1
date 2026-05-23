@@ -1,10 +1,10 @@
 <#
 .SYNOPSIS
-    absorb-osp — Open Source Project Absorption Workflow
-    Installer for Windows (PowerShell)
+    absorb-osp — Installer for Windows (PowerShell)
 
 .DESCRIPTION
     Installs the absorb-osp workflow for Claude Code and optionally Hermes Agent.
+    Creates backups of existing files before overwriting.
 
 .PARAMETER Prefix
     Installation directory (default: ~\.claude)
@@ -25,11 +25,23 @@ param(
 
 $REPO_URL = "https://github.com/SATPROTOCOL/micos"
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
+$TIMESTAMP = Get-Date -Format "yyyyMMdd-HHmmss"
 
 function Write-Info  { Write-Host "[INFO]" -ForegroundColor Blue -NoNewline; Write-Host " $args" }
 function Write-Ok    { Write-Host "[OK]"   -ForegroundColor Green -NoNewline; Write-Host "   $args" }
 function Write-Warn  { Write-Host "[WARN]" -ForegroundColor Yellow -NoNewline; Write-Host " $args" }
 function Write-Error { Write-Host "[ERROR]" -ForegroundColor Red -NoNewline; Write-Host " $args" }
+
+# ── Backup Function ────────────────────────────────────────────────
+
+function Backup-File {
+    param([string]$Path)
+    if (Test-Path $Path) {
+        $backup = "$Path.$TIMESTAMP.bak"
+        Copy-Item $Path $backup
+        Write-Warn "Backed up existing: $Path → $backup"
+    }
+}
 
 # ── Install for Claude Code ────────────────────────────────────────
 
@@ -40,57 +52,90 @@ function Install-Claude {
     Write-Info "Installing absorb-osp for Claude Code..."
     Write-Info "  Source: $src"
     Write-Info "  Target: $dst"
+    Write-Info ""
+
+    # Validate source
+    if (-not (Test-Path $src)) {
+        Write-Error "Cannot find 'claude/' directory in $src"
+        Write-Error "Run this script from within the cloned repository."
+        Write-Host ""
+        Write-Info "Correct usage:"
+        Write-Info "  git clone $REPO_URL"
+        Write-Info "  cd micos/absorb-osp && .\install.ps1"
+        exit 1
+    }
 
     # Create directories
     New-Item -ItemType Directory -Force -Path "$dst\skills\absorb-osp" | Out-Null
     New-Item -ItemType Directory -Force -Path "$dst\rules" | Out-Null
+    New-Item -ItemType Directory -Force -Path "$dst\absorbed" | Out-Null
 
-    # Copy skill
+    $filesCopied = 0
+    $filesSkipped = 0
+
+    # Skill definition
     $skillSrc = Join-Path $src "SKILL.md"
     if (Test-Path $skillSrc) {
-        Copy-Item $skillSrc "$dst\skills\absorb-osp\SKILL.md"
-        Write-Ok "Installed skill → $dst\skills\absorb-osp\SKILL.md"
+        $skillDst = "$dst\skills\absorb-osp\SKILL.md"
+        Backup-File $skillDst
+        Copy-Item $skillSrc $skillDst
+        Write-Ok "Installed → $skillDst"
+        $filesCopied++
     }
 
-    # Copy workflow spec
+    # Workflow spec
     $specSrc = Join-Path $src "WORKFLOW_SPEC.md"
     if (Test-Path $specSrc) {
-        Copy-Item $specSrc "$dst\skills\absorb-osp\WORKFLOW_SPEC.md"
-        Write-Ok "Installed spec → $dst\skills\absorb-osp\WORKFLOW_SPEC.md"
+        $specDst = "$dst\skills\absorb-osp\WORKFLOW_SPEC.md"
+        Backup-File $specDst
+        Copy-Item $specSrc $specDst
+        Write-Ok "Installed → $specDst"
+        $filesCopied++
     }
 
-    # Copy rules
+    # Enforcement rules
     $rulesSrc = Join-Path $src "rules\absorb-workflow.md"
     if (Test-Path $rulesSrc) {
-        Copy-Item $rulesSrc "$dst\rules\absorb-workflow.md"
-        Write-Ok "Installed rules → $dst\rules\absorb-workflow.md"
+        $rulesDst = "$dst\rules\absorb-workflow.md"
+        Backup-File $rulesDst
+        Copy-Item $rulesSrc $rulesDst
+        Write-Ok "Installed → $rulesDst"
+        $filesCopied++
     }
 
-    # Copy templates
+    # Templates (don't overwrite existing)
     $tmplSrc = Join-Path $SCRIPT_DIR "templates"
-    $absorbedDir = "$dst\absorbed"
-    New-Item -ItemType Directory -Force -Path $absorbedDir | Out-Null
     if (Test-Path $tmplSrc) {
         Get-ChildItem "$tmplSrc\*.md" | ForEach-Object {
             $destName = "TEMPLATE_$($_.Name)"
-            Copy-Item $_.FullName "$absorbedDir\$destName"
-            Write-Ok "Installed template → $absorbedDir\$destName"
-        }
-    }
-
-    # Copy shared indexes (don't overwrite existing)
-    $sharedSrc = Join-Path $SCRIPT_DIR "shared"
-    if (Test-Path $sharedSrc) {
-        Get-ChildItem "$sharedSrc\*.md" | ForEach-Object {
-            $destPath = "$absorbedDir\$($_.Name)"
+            $destPath = "$dst\absorbed\$destName"
             if (-not (Test-Path $destPath)) {
                 Copy-Item $_.FullName $destPath
-                Write-Ok "Created index → $destPath"
+                Write-Ok "Installed template → $destPath"
+                $filesCopied++
             } else {
-                Write-Warn "Skipping existing: $destPath"
+                $filesSkipped++
             }
         }
     }
+
+    # Shared indexes (don't overwrite existing)
+    $sharedSrc = Join-Path $SCRIPT_DIR "shared"
+    if (Test-Path $sharedSrc) {
+        Get-ChildItem "$sharedSrc\*.md" | ForEach-Object {
+            $destPath = "$dst\absorbed\$($_.Name)"
+            if (-not (Test-Path $destPath)) {
+                Copy-Item $_.FullName $destPath
+                Write-Ok "Created index → $destPath"
+                $filesCopied++
+            } else {
+                $filesSkipped++
+            }
+        }
+    }
+
+    Write-Host ""
+    Write-Info "Claude Code install summary: $filesCopied new/updated, $filesSkipped skipped (already exist)"
 }
 
 # ── Install for Hermes Agent ───────────────────────────────────────
@@ -105,17 +150,19 @@ function Install-Hermes {
         Write-Info "Created Hermes config directory"
     }
 
+    $filesCopied = 0
+
     $yamlSrc = Join-Path $src "absorb-osp.yaml"
     if (Test-Path $yamlSrc) {
-        Copy-Item $yamlSrc "$hermesConfig\absorb-osp.yaml"
-        Write-Ok "Installed Hermes config → $hermesConfig\absorb-osp.yaml"
+        $yamlDst = "$hermesConfig\absorb-osp.yaml"
+        Backup-File $yamlDst
+        Copy-Item $yamlSrc $yamlDst
+        Write-Ok "Installed → $yamlDst"
+        $filesCopied++
     }
 
-    $readmeSrc = Join-Path $src "README.md"
-    if (Test-Path $readmeSrc) {
-        Copy-Item $readmeSrc "$hermesConfig\absorb-osp-hermes.md"
-        Write-Ok "Installed Hermes readme → $hermesConfig\absorb-osp-hermes.md"
-    }
+    Write-Host ""
+    Write-Info "Hermes install summary: $filesCopied file(s) installed"
 }
 
 # ── Main ───────────────────────────────────────────────────────────
