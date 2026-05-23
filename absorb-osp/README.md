@@ -303,3 +303,18 @@ AI agents today can clone and run almost any open-source project, but they lack 
 - **System evolution** — merging, upgrading, and retiring absorbed capabilities over time
 
 **absorb-osp** fills this gap with a spec-first, security-aware, evolution-oriented workflow that any AI agent can follow.
+
+---
+
+## 👨‍💻 Developer
+
+**absorb-osp** is part of the **micos** ecosystem, crafted by **[SATPROTOCOL](https://github.com/SATPROTOCOL)**.
+
+<p align="center">
+  <a href="https://github.com/SATPROTOCOL">
+    <img src="https://img.shields.io/badge/GitHub-SATPROTOCOL-181717?style=for-the-badge&logo=github" alt="SATPROTOCOL">
+  </a>
+  <a href="https://github.com/SATPROTOCOL/micos">
+    <img src="https://img.shields.io/badge/monos-SATPROTOCOL%2Fmicos-blue?style=for-the-badge&logo=github" alt="micos">
+  </a>
+</p>
