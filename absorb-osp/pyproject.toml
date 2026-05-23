@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "absorb-osp"
-version = "2.0.0"
+version = "2.0.1"
 description = "Systematic 12-step closed-loop flywheel for evaluating, absorbing, and internalizing open-source projects into AI agent ecosystems"
 readme = "README.md"
 license = {text = "MIT"}

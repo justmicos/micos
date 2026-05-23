@@ -12,18 +12,14 @@ Usage:
     absorb-osp mcp                Start MCP protocol server
 """
 
-import os
-import sys
 from pathlib import Path
 
 import typer
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
-from rich.markdown import Markdown
 
 from . import __version__
-from .lib.models import WorkflowResult
 from .lib.scanner import scan_for_leaks, security_scan
 from .lib.workflow import WorkflowEngine
 
@@ -56,7 +52,9 @@ def run(
     result = engine.run(url)
 
     if result.success:
-        console.print(f"\n[green]✅ Workflow complete[/]")
+        total = len(result.steps)
+        passed = len([s for s in result.steps if s.status == "passed"])
+        console.print(f"\n[green]✅ Workflow complete[/] ({passed}/{total} steps)")
         console.print(f"   Report: {result.report_path}")
     else:
         err_console.print(f"\n[red]❌ Workflow failed: {result.error}[/]")
@@ -93,13 +91,22 @@ def status(
 ):
     """Show absorbed project status or system info."""
     if name:
-        console.print(f"[bold]Project:[/] {name}")
-        console.print("[yellow]Detailed status requires INDEX.md lookup.[/]")
-    else:
-        # System status
         engine = WorkflowEngine()
         projects = engine.list_absorbed()
-
+        for p in projects:
+            if p["name"].lower() == name.lower():
+                console.print(Panel(
+                    f"[bold cyan]{p['name']}[/]\n"
+                    f"Type: {p['type']}  |  Depth: {p['depth']}\n"
+                    f"Status: {p['status']}  |  Date: {p['date']}",
+                    title="📋 Project Status"
+                ))
+                return
+        err_console.print(f"[red]❌ Project '{name}' not found in absorbed projects.[/]")
+        raise typer.Exit(code=1)
+    else:
+        engine = WorkflowEngine()
+        projects = engine.list_absorbed()
         console.print(Panel(
             f"[bold]absorb-osp v{__version__}[/]\n\n"
             f"[cyan]Absorbed projects:[/] {len(projects)}\n"
@@ -118,15 +125,10 @@ def init(
 ):
     """Initialize workspace directories for absorption."""
     base = Path(directory) if directory else Path.home() / ".claude"
-    dirs = [
-        base / "absorbed",
-        base / "skills",
-        base / "instincts",
-    ]
+    dirs = [base / "absorbed", base / "skills", base / "instincts"]
     for d in dirs:
         d.mkdir(parents=True, exist_ok=True)
         console.print(f"  [green]✅[/] {d}")
-
     console.print(f"\n[bold]Workspace initialized at:[/] {base}")
 
 
@@ -134,32 +136,36 @@ def init(
 def validate(
     file: str = typer.Argument(..., help="Report file path"),
 ):
-    """Validate an analysis report file."""
+    """Validate an analysis report file's frontmatter."""
     path = Path(file)
     if not path.exists():
         err_console.print(f"[red]❌ File not found: {file}[/]")
         raise typer.Exit(code=1)
 
-    content = path.read_text(encoding="utf-8")
-    if content.startswith("---"):
-        # Basic frontmatter check
-        parts = content.split("---", 2)
-        if len(parts) >= 3:
-            console.print(f"[green]✅ Valid frontmatter[/] in {file}")
-            console.print(f"   Sections: {len(parts[2].split('## ')) - 1}")
-        else:
-            err_console.print(f"[red]❌ Invalid frontmatter in {file}[/]")
-            raise typer.Exit(code=1)
-    else:
+    content = path.read_text(encoding="utf-8", errors="replace")
+    if not content.startswith("---"):
         err_console.print(f"[red]❌ Missing frontmatter in {file}[/]")
         raise typer.Exit(code=1)
+
+    parts = content.split("---", 2)
+    if len(parts) < 3:
+        err_console.print(f"[red]❌ Invalid frontmatter in {file}[/]")
+        raise typer.Exit(code=1)
+
+    sections = len(parts[2].split("## ")) - 1
+    frontmatter_lines = len(parts[1].strip().split("\n"))
+    console.print(f"[green]✅ Valid frontmatter[/] in {file}")
+    console.print(f"   Frontmatter fields: {frontmatter_lines}")
+    console.print(f"   Report sections:    {sections}")
 
 
 @app.command()
 def scan(
     path: str = typer.Argument(".", help="Path to scan"),
     security: bool = typer.Option(False, "--security", "-s",
-                                  help="Run full security audit"),
+                                  help="Run full security audit (7 checks)"),
+    verbose: bool = typer.Option(False, "--verbose", "-v",
+                                 help="Show matched line content"),
 ):
     """Run privacy leak scan or security audit."""
     scan_path = Path(path)
@@ -180,20 +186,22 @@ def scan(
     else:
         console.print("[bold]🛡️ Privacy Leak Scan[/]")
         console.print(f"   Scanning: {scan_path}")
-        findings = scan_for_leaks(str(scan_path))
+        findings = scan_for_leaks(str(scan_path), verbose=verbose)
         if findings:
             for f in findings[:10]:
-                console.print(f"  [red]⚠️[/] {f['file']}:{f['line']} — {f['pattern']}")
+                loc = f"{f['file']}:{f['line']}"
+                detail = f" — {f.get('content', '')}" if verbose else ""
+                console.print(f"  [red]⚠️[/] {loc} — {f['pattern']}{detail}")
         else:
             console.print("  [green]✅ No leaks detected[/]")
-        console.print(f"\n   Files scanned, {len(findings)} finding(s)")
+        console.print(f"\n   Finding(s): {len(findings)}")
 
 
 @app.command()
 def daemon(
     port: int = typer.Option(8765, "--port", "-p", help="Webhook listen port"),
     watch: str = typer.Option(
-        None, "--watch", "-w", help="Directory to watch for URL files"
+        None, "--watch", "-w", help="Directory to watch for *.url files"
     ),
 ):
     """Start daemon mode — webhook listener or directory watcher."""

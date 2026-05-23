@@ -1,7 +1,7 @@
 ---
 name: absorb-osp
 preamble-tier: 1
-version: 2.0.0
+version: 2.0.1
 description: |
   Systematic open-source project absorption closed-loop flywheel — security triage →
   deep evaluation → quantified judging → dedup classification → multi-depth

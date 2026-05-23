@@ -127,6 +127,17 @@ class WorkflowStep:
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
 
+    def start(self):
+        """Mark step as running."""
+        self.status = "running"
+        self.started_at = datetime.now()
+
+    def complete(self, status: str = "passed", output: str = ""):
+        """Mark step as completed."""
+        self.status = status
+        self.output = output
+        self.completed_at = datetime.now()
+
 
 @dataclass
 class WorkflowResult:
@@ -136,3 +147,9 @@ class WorkflowResult:
     report_path: str = ""
     success: bool = False
     error: str = ""
+
+    def _add(self, number: int, name: str) -> WorkflowStep:
+        """Add a new step to the result and return it."""
+        step = WorkflowStep(number=number, name=name)
+        self.steps.append(step)
+        return step

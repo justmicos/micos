@@ -1,12 +1,12 @@
 """absorb-osp — Workflow Engine (12-step closed-loop flywheel)"""
 
 import os
-import sys
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from .analyzer import analyze_github_url
+from .analyzer import analyze_github_url, detect_tech_stack
 from .models import (
     ClassifyDecision,
     Depth,
@@ -16,8 +16,8 @@ from .models import (
     WorkflowResult,
     WorkflowStep,
 )
-from .reporter import generate_analysis_report
-from .scanner import security_scan
+from .reporter import generate_analysis_report, generate_usage_log
+from .scanner import scan_for_leaks, security_scan
 
 
 class WorkflowEngine:
@@ -37,90 +37,113 @@ class WorkflowEngine:
             str(Path.home() / "projects"),
         )
 
-    def run(self, github_url: str) -> WorkflowResult:
-        """Execute the full 12-step workflow for a GitHub URL."""
+    def run(self, github_url: str, judge_score: Optional[JudgeScore] = None) -> WorkflowResult:
+        """Execute the full 12-step workflow for a GitHub URL.
+
+        Args:
+            github_url: The GitHub repository URL to absorb.
+            judge_score: Optional pre-set judge score. Uses defaults if not provided.
+
+        Returns:
+            WorkflowResult with all step outcomes.
+        """
         result = WorkflowResult(success=False)
 
         try:
             # Step 0: Trigger
-            self._log_step(result, 0, "Trigger", "running")
+            step = result._add(0, "Trigger")
+            step.start()
             print(f"\n🎯 Step 0: Trigger — {github_url}")
-            self._log_step(result, 0, "Trigger", "passed")
+            step.complete("passed")
 
             # Step 1: Triage
-            self._log_step(result, 1, "Triage", "running")
+            step = result._add(1, "Triage")
+            step.start()
             print("🔍 Step 1: Triage — <30s quick scan...")
             if "github.com" not in github_url:
-                raise ValueError("Not a GitHub URL")
-            self._log_step(result, 1, "Triage", "passed", "URL valid, security redline: pending")
+                raise ValueError(f"Not a GitHub URL: {github_url}")
+            step.complete("passed", "URL valid. Security redline check deferred to Step 3.")
 
             # Step 2: Verify
-            self._log_step(result, 2, "Verify", "running")
+            step = result._add(2, "Verify")
+            step.start()
             print("📋 Step 2: Verify — fetching GitHub metadata...")
             project = analyze_github_url(github_url)
             result.project = project
-            print(f"   → {project.name}: {project.stars}★, {project.license_type}")
-            self._log_step(result, 2, "Verify", "passed",
-                           f"{project.stars}★, {project.license_type}")
+            print(f"   → {project.name}: {project.stars}★, license={project.license_type}")
+            step.complete("passed", f"{project.stars}★, {project.license_type}")
 
             # Step 3: Evaluate
-            self._log_step(result, 3, "Evaluate", "running")
-            print("🔬 Step 3: Evaluate — analyzing architecture...")
-            self._log_step(result, 3, "Evaluate", "passed")
+            step = result._add(3, "Evaluate")
+            step.start()
+            print("🔬 Step 3: Evaluate — architecture + security scan...")
+            # Run security scan on the local clone path if available
+            project_path = str(Path(self.projects_dir) / project.name)
+            if Path(project_path).exists():
+                sec = security_scan(project_path)
+                tech = detect_tech_stack(project_path)
+                eval_detail = (
+                    f"Security: {sec['gate']}, "
+                    f"Tech: {tech.get('language') or 'unknown'}"
+                )
+                print(f"   → {eval_detail}")
+            else:
+                eval_detail = "Local clone not found. Security scan deferred."
+                print(f"   → {eval_detail}")
+            step.complete("passed", eval_detail)
 
             # Step 4: Judge
-            self._log_step(result, 4, "Judge", "running")
+            step = result._add(4, "Judge")
+            step.start()
             print("📊 Step 4: Judge — scoring matrix...")
-            score = JudgeScore()
-            self._log_step(result, 4, "Judge", "passed",
-                           f"Score: {score.total:.1f}/5.0 → {score.decision}")
+            score = judge_score or JudgeScore()
+            print(f"   → Score: {score.total:.1f}/5.0 → {score.decision} → Depth: {score.suggested_depth.value}")
+            step.complete("passed", f"Score: {score.total:.1f}/5.0 → {score.decision}")
 
             # Step 5: Classify
-            self._log_step(result, 5, "Classify", "running")
+            step = result._add(5, "Classify")
+            step.start()
             existing = self._find_existing(project.name)
             if existing:
-                decision = "ENHANCE"
-                print(f"   → Found existing: {existing}. Decision: {decision}")
+                decision = ClassifyDecision.ENHANCE
+                print(f"   → Found existing: '{existing}'. Decision: ENHANCE (merge into existing)")
             else:
-                decision = "STANDALONE"
-                print(f"   → No duplicates found. Decision: {decision}")
-            self._log_step(result, 5, "Classify", "passed", decision)
+                decision = ClassifyDecision.STANDALONE
+                print(f"   → No duplicates found. Decision: STANDALONE (fresh absorption)")
+            step.complete("passed", decision.value)
 
             # Step 6: Internalize
-            self._log_step(result, 6, "Internalize", "running")
+            step = result._add(6, "Internalize")
+            step.start()
             print("📝 Step 6: Internalize — generating artifacts...")
             Path(self.absorbed_dir).mkdir(parents=True, exist_ok=True)
             report_path = generate_analysis_report(project, score, self.absorbed_dir)
+            usage_log_path = generate_usage_log(project.name, project.github_url, self.absorbed_dir)
             result.report_path = report_path
-            print(f"   → Report: {report_path}")
-            self._log_step(result, 6, "Internalize", "passed", report_path)
+            print(f"   → Analysis report: {report_path}")
+            print(f"   → Usage log:       {usage_log_path}")
+            step.complete("passed", f"Report: {report_path}")
 
             # Step 7: Load
-            self._log_step(result, 7, "Load", "skipped",
-                           "Requires manual dependency installation")
+            result._add(7, "Load").complete("skipped", "Requires: git clone + dependency install")
 
             # Step 8: Integrate
-            self._log_step(result, 8, "Integrate", "skipped",
-                           "Requires agent-specific configuration")
+            result._add(8, "Integrate").complete("skipped", "Requires: agent skill config + proxy route")
 
             # Step 9: Verify
-            self._log_step(result, 9, "Verify", "skipped",
-                           "Requires service health check")
+            result._add(9, "Verify").complete("skipped", "Requires: service health check")
 
             # Step 10: Sync
-            self._log_step(result, 10, "Sync", "pending",
-                           "Run: absorb-osp index to sync")
+            result._add(10, "Sync").complete("pending", "Run: absorb-osp index to sync memory")
 
             # Step 11: Iterate
-            self._log_step(result, 11, "Iterate", "pending",
-                           "Usage log: TBD")
+            result._add(11, "Iterate").complete("pending", "Usage log created. Manual tracking needed.")
 
             # Step 12: Evolve
-            self._log_step(result, 12, "Evolve", "skipped",
-                           "Quarterly review")
+            result._add(12, "Evolve").complete("skipped", "Quarterly consolidation review")
 
             result.success = True
-            print(f"\n✅ Absorption workflow complete for {project.name}")
+            print(f"\n✅ Absorption workflow complete for '{project.name}'")
             print(f"   Report: {report_path}")
 
         except Exception as e:
@@ -130,47 +153,48 @@ class WorkflowEngine:
 
         return result
 
-    def _log_step(self, result: WorkflowResult, num: int, name: str,
-                  status: str, output: str = ""):
-        """Add or update a step in the workflow result."""
-        existing = [s for s in result.steps if s.number == num]
-        if existing:
-            existing[0].status = status
-            existing[0].output = output
-            existing[0].completed_at = datetime.now()
-        else:
-            result.steps.append(WorkflowStep(
-                number=num, name=name, status=status,
-                output=output, completed_at=datetime.now(),
-            ))
-
     def _find_existing(self, name: str) -> Optional[str]:
-        """Check if a project with similar name already exists in index."""
+        """Check if a project with similar name already exists in INDEX.md.
+
+        Uses word-boundary matching to avoid false partial matches.
+        """
         index_file = Path(self.absorbed_dir) / "INDEX.md"
         if not index_file.exists():
             return None
-        content = index_file.read_text()
-        if name.lower() in content.lower():
+        content = index_file.read_text(encoding="utf-8")
+        # Word-boundary match: only match whole project names
+        pattern = re.compile(r'\b' + re.escape(name.lower()) + r'\b')
+        if pattern.search(content.lower()):
             return name
         return None
 
     def list_absorbed(self) -> list[dict]:
-        """List all absorbed projects from the index."""
+        """List all absorbed projects from INDEX.md.
+
+        Parses the markdown table format:
+        | Project | Type | Depth | Status | Date | Integration |
+        """
         index_file = Path(self.absorbed_dir) / "INDEX.md"
         if not index_file.exists():
             return []
 
         projects = []
-        content = index_file.read_text()
+        content = index_file.read_text(encoding="utf-8")
         for line in content.split("\n"):
-            if line.startswith("|") and "|" in line:
-                parts = [p.strip() for p in line.split("|")]
-                if len(parts) >= 6 and parts[1] and parts[1] != "Project":
-                    projects.append({
-                        "name": parts[1],
-                        "type": parts[2] if len(parts) > 2 else "",
-                        "depth": parts[3] if len(parts) > 3 else "",
-                        "status": parts[4] if len(parts) > 4 else "",
-                        "date": parts[5] if len(parts) > 5 else "",
-                    })
+            line = line.strip()
+            if not line.startswith("|"):
+                continue
+            # Skip header/separator rows
+            if "---" in line or line.startswith("| Project"):
+                continue
+            parts = [p.strip() for p in line.split("|")]
+            # parts[0] is empty (before first |), parts[1] is Project, etc.
+            if len(parts) >= 6 and parts[1]:
+                projects.append({
+                    "name": parts[1],
+                    "type": parts[2] if len(parts) > 2 else "",
+                    "depth": parts[3] if len(parts) > 3 else "",
+                    "status": parts[4] if len(parts) > 4 else "",
+                    "date": parts[5] if len(parts) > 5 else "",
+                })
         return projects

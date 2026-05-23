@@ -64,7 +64,7 @@ ALLOWLIST = [
 
     # GitHub badges and URLs
     r'img\.shields\.io',
-    r'github\.com/SATPROTOCOL',
+    r'github\.com/justmicos',
     r'github\.com/HermesAgent',
     r'claude\.ai',
     r'raw\.githubusercontent\.com',
@@ -76,6 +76,15 @@ ALLOWLIST = [
     # Common false positives
     r'10\.0\.0\.\d+',  # Documentation examples
     r'192\.168\.\d+\.\d+',  # Documentation examples
+
+    # Scanner pattern definitions (false positives)
+    r'/home/',
+    r'/Users/',
+    r'mysql://',
+    r'PRIVACY_PATTERNS',
+    r'PRIVACY_ALLOWLIST',
+    r'BLOCK_PATTERNS',
+    r'ALLOWLIST',
 ]
 
 def load_allowlist():

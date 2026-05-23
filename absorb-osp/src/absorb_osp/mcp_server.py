@@ -16,12 +16,11 @@ Tools:
 import json
 import sys
 from pathlib import Path
-from typing import Optional
 
+from . import __version__
 from .lib.scanner import scan_for_leaks, security_scan
 from .lib.workflow import WorkflowEngine
 
-# Try importing mcp — graceful fallback
 try:
     from mcp.server import FastMCP
     HAS_MCP = True
@@ -29,7 +28,7 @@ except ImportError:
     HAS_MCP = False
 
 
-def create_server() -> Optional[object]:
+def create_server():
     """Create the MCP server if the mcp package is available."""
     if not HAS_MCP:
         return None
@@ -46,20 +45,26 @@ def create_server() -> Optional[object]:
         """Run the 12-step absorption workflow on a GitHub URL.
 
         Args:
-            url: GitHub repository URL to absorb
+            url: GitHub repository URL to absorb.
             depth: Absorption depth (auto/L1/L2/L3/L4/L5). Default 'auto' lets the judge decide.
 
         Returns:
             JSON string with workflow results including analysis report path.
         """
-        result = engine.run(url)
-        return json.dumps({
-            "success": result.success,
-            "project": result.project.name if result.project else "unknown",
-            "report_path": result.report_path,
-            "steps_completed": len([s for s in result.steps if s.status == "passed"]),
-            "error": result.error,
-        }, indent=2)
+        try:
+            result = engine.run(url)
+            return json.dumps({
+                "success": result.success,
+                "project": result.project.name if result.project else "unknown",
+                "report_path": result.report_path,
+                "steps_completed": len([s for s in result.steps if s.status == "passed"]),
+                "error": result.error,
+            }, indent=2)
+        except Exception as e:
+            return json.dumps({
+                "success": False,
+                "error": str(e),
+            }, indent=2)
 
     @mcp.tool()
     def list_projects() -> str:
@@ -76,7 +81,7 @@ def create_server() -> Optional[object]:
         """Get detailed status of an absorbed project.
 
         Args:
-            name: Name of the absorbed project to check
+            name: Name of the absorbed project to check.
 
         Returns:
             JSON string with project status details.
@@ -92,24 +97,27 @@ def create_server() -> Optional[object]:
         """Run a privacy leak scan on the specified path.
 
         Args:
-            path: Directory path to scan for privacy leaks
+            path: Directory path to scan for privacy leaks.
 
         Returns:
             JSON string with scan results.
         """
-        findings = scan_for_leaks(path)
-        return json.dumps({
-            "findings_count": len(findings),
-            "findings": findings[:20],
-            "pass": len(findings) == 0,
-        }, indent=2)
+        try:
+            findings = scan_for_leaks(path)
+            return json.dumps({
+                "findings_count": len(findings),
+                "findings": findings[:20],
+                "pass": len(findings) == 0,
+            }, indent=2)
+        except Exception as e:
+            return json.dumps({"error": str(e), "pass": False}, indent=2)
 
     @mcp.tool()
     def validate_report(file: str) -> str:
         """Validate an absorption analysis report file.
 
         Args:
-            file: Path to the analysis report markdown file
+            file: Path to the analysis report markdown file.
 
         Returns:
             JSON string with validation result.
@@ -117,18 +125,20 @@ def create_server() -> Optional[object]:
         path = Path(file)
         if not path.exists():
             return json.dumps({"valid": False, "error": "File not found"})
-
-        content = path.read_text()
-        if content.startswith("---"):
-            parts = content.split("---", 2)
-            valid = len(parts) >= 3
-            sections = len(parts[2].split("## ")) - 1 if valid else 0
-            return json.dumps({
-                "valid": valid,
-                "sections": sections,
-                "has_frontmatter": True,
-            }, indent=2)
-        return json.dumps({"valid": False, "error": "Missing frontmatter"})
+        try:
+            content = path.read_text(encoding="utf-8", errors="replace")
+            if content.startswith("---"):
+                parts = content.split("---", 2)
+                valid = len(parts) >= 3
+                sections = len(parts[2].split("## ")) - 1 if valid else 0
+                return json.dumps({
+                    "valid": valid,
+                    "sections": sections,
+                    "has_frontmatter": True,
+                }, indent=2)
+            return json.dumps({"valid": False, "error": "Missing frontmatter"})
+        except Exception as e:
+            return json.dumps({"valid": False, "error": str(e)}, indent=2)
 
     @mcp.tool()
     def system_status() -> str:
@@ -139,7 +149,7 @@ def create_server() -> Optional[object]:
         """
         projects = engine.list_absorbed()
         return json.dumps({
-            "version": "2.0.0",
+            "version": __version__,
             "absorbed_count": len(projects),
             "projects": [p["name"] for p in projects],
             "absorbed_dir": str(Path(engine.absorbed_dir).resolve()),
@@ -156,8 +166,13 @@ def start_mcp_server():
         print("   pip install mcp")
         sys.exit(1)
 
-    print("🚀 Starting absorb-osp MCP server...")
+    print(f"🚀 Starting absorb-osp MCP server v{__version__}...")
     print("   Compatible with: Claude Code, Hermes Agent, any MCP client")
-    print("   Tools available: absorb_project, list_projects, get_project_status,")
-    print("                    check_privacy, validate_report, system_status")
+    print("   Tools:")
+    print("     absorb_project  — Run 12-step absorption workflow")
+    print("     list_projects   — List absorbed projects")
+    print("     get_project_status — Project details")
+    print("     check_privacy   — Privacy leak scan")
+    print("     validate_report — Validate analysis report")
+    print("     system_status   — System health and info")
     server.run()

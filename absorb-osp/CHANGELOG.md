@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.0.1] - 2026-05-23
+
+### Fixed
+- models.py: WorkflowStep `start()`/`complete()` methods; WorkflowResult `_add()` helper
+- analyzer.py: curl cached, API retry, expanded tech detection (Ruby, Kotlin, Swift, Angular, Nuxt.js), encoding-safe
+- workflow.py: word-boundary dedup, real security_scan call, proper step lifecycle, INDEX.md separator skip
+- reporter.py: removed dead imports, classify_decision not hardcoded, uses `classification` param
+- scanner.py: `verbose` param used, 4→7 security checks, 50+ scan types, expanded skip dirs
+- cli.py: removed unused imports, status works with project name, validate shows field count, scan has --verbose
+- mcp_server.py: utf-8 encoding on all reads, dynamic version from __init__, try/except wrapping
+- daemon.py: CORS headers, input validation, sorted watcher, descriptive errors
+- privacy-check.py: false-positive allowlist entries for scanner patterns
+
+### Changed
+- __init__.py: exports WorkflowEngine, scan_for_leaks, security_scan
+- All modules: consistent encoding="utf-8" on all file I/O
+
 ## [2.0.0] - 2026-05-23
 
 ### Added

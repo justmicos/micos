@@ -1,36 +1,40 @@
-"""absorb-osp — Report Generator (analysis reports, markdown)"""
+"""absorb-osp — Report Generator (analysis reports, usage logs)"""
 
-import os
 from datetime import date
 from pathlib import Path
-from typing import Optional
 
-from .models import AbsorbedProject, Depth, JudgeScore, ProjectInfo, Status
+from .models import ClassifyDecision, Depth, JudgeScore, ProjectInfo
 
 
 def generate_analysis_report(
     project: ProjectInfo,
     score: JudgeScore,
     output_dir: str = ".",
+    classification: ClassifyDecision = ClassifyDecision.STANDALONE,
 ) -> str:
     """Generate a standardized analysis report following the template format.
 
-    Returns the path to the generated report.
+    Args:
+        project: The project metadata.
+        score: Judge score result.
+        output_dir: Directory to write the report.
+        classification: Merge classification decision.
+
+    Returns:
+        Path to the generated report file.
     """
     today = date.today().isoformat()
     depth = score.suggested_depth.value
-    status = "pending"
 
-    # Build report content
     report = f"""---
 absorb_date: {today}
 github_url: {project.github_url}
 license: {project.license_type}
 stars: {project.stars}
 depth: {depth}
-status: {status}
+status: pending
 judge_score: {score.total:.1f}
-classify_decision: STANDALONE
+classify_decision: {classification.value}
 integration_targets:
   - agent-skills
 ---
@@ -69,7 +73,7 @@ integration_targets:
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| Malicious code | ⏳ Pending | |
+| Malicious code | ⏳ Pending | Requires local clone analysis |
 
 ## 5. Judge Scorecard
 
@@ -83,6 +87,7 @@ integration_targets:
 | **Total** | **100%** | | **{score.total:.2f}** | |
 
 **Decision**: {score.decision}
+**Suggested Depth**: {depth}
 
 ## 6. Usage Scenarios
 
@@ -92,26 +97,25 @@ integration_targets:
 ## 7. How to Start
 
 ```bash
-# pending installation
+# Installation: git clone {project.github_url}.git
+# cd {project.name}
 ```
 
 ## 8. How to Verify
 
 ```bash
-# TBD
+# Health check: TBD
 ```
 """
 
-    # Write file
     filename = f"{project.name}-analysis-report.md"
     output_path = Path(output_dir) / filename
     output_path.write_text(report, encoding="utf-8")
-
     return str(output_path)
 
 
 def generate_usage_log(name: str, github_url: str, output_dir: str = ".") -> str:
-    """Generate an initial usage log."""
+    """Generate an initial usage log for a newly absorbed project."""
     today = date.today().isoformat()
     content = f"""---
 project: {name}
@@ -138,5 +142,4 @@ last_updated: {today}
     filename = f"{name}-usage-log.md"
     output_path = Path(output_dir) / filename
     output_path.write_text(content, encoding="utf-8")
-
     return str(output_path)
